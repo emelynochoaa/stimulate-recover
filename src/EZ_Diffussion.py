@@ -18,14 +18,27 @@ def forward_equations(v, a, t):
 
 # Observed summary statictics equations
 def simulate_observed(R_pred, M_pred, V_pred, N):
-    T_obs = np.random.binomial(R_pred, N)
-    M_obs = np.random.normal(M_pred, (V_pred / N))
-    V_obs = np.random.gamma((N - 1) / 2, 2 * V_pred / (N - 1))
-    return T_obs, M_obs, V_obs
+    
+    epsilon = 1e-6
+    R_pred = np.clip(R_pred, epsilon, 1 - epsilon)
+
+    T_obs = np.random.binomial(N, R_pred)
+    M_obs = np.random.normal(M_pred, np.sqrt(max(V_pred, epsilon) / N))
+    if N > 1:
+        V_obs = np.random.gamma((N - 1) / 2, 2 * max(V_pred, epsilon) / (N - 1))
+    else:
+        V_obs = V_pred  
+
+    return T_obs / N, M_obs, V_obs
 
 # Inverse EZ Equations 
 def inverse_equations(T_obs, M_obs, V_obs):
-    L = np.log(T_obs / (1 - T_obs))
+
+    epsilon = 1e-6  
+    L = np.log((T_obs + epsilon) / (1 - T_obs + epsilon))
+   
+    #ChatGPT Acknowledgement: Epsilon codes pulled form ChatGPT to help with extreme values due to error messages 
+
     v_est = np.sign(T_obs - 0.5) * 4 * np.sqrt(L * (T_obs**2 * L - T_obs * L + T_obs - 0.5) / V_obs)
     a_est = L / v_est
     t_est = M_obs - (a_est / (2 * v_est)) * (1 - np.exp(-v_est * a_est)) / (1 + np.exp(-v_est * a_est))
@@ -66,8 +79,13 @@ def simulate_and_recover(N, iterations=1000):
 
 # Run for N = 10, 40, 4000 
 if __name__ == "__main__":
-    results = {}
-    for N in [10, 40, 4000]:
-        bias, mse = simulate_and_recover(N)
-        results[N] = {"Bias": bias, "MSE": mse}
-        print(f"N={N} | Bias: {bias} | MSE: {mse}")
+    with open("README.md", "a") as f:  
+        f.write("\n## Simulation Results\n")
+        for N in [10, 40, 4000]:
+            bias, mse = simulate_and_recover(N)
+            results_str = f"N={N} | Bias: {bias} | MSE: {mse}\n"
+            print(results_str)  # Print to terminal
+            f.write(results_str)  # Append to README.md
+
+#ChatGPT Acknowledgment:  
+# Used software to print results directly into README file 

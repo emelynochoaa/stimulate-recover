@@ -1,8 +1,10 @@
 #!/bin/bash
 
-# Run the simulation for N = 10, 40, 4000
-python3 EZ_Diffussion.py > results.txt
+# Run the simulation and print results into README.md
+python3 src/EZ_Diffussion.py 
 
-echo "Simulation completed. Results in results.txt"
+echo "Simulation completed. Results in README.md"
+
+
 
 
